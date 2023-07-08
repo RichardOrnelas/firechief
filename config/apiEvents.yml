@@ -1,0 +1,9 @@
+- http:
+    method: post
+    path: slack
+- http:
+    method: post
+    path: slackactions
+- http:
+    method: post
+    path: slackoptions

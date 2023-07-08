@@ -1,0 +1,58 @@
+service:
+  name: fire-chief
+
+frameworkVersion: ">=1.31.0"
+
+# Add the serverless-webpack plugin
+plugins:
+  - serverless-webpack
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: us-east-1
+  stage: staging
+  memorySize: 128
+  timeout: 30
+  apiName: fire-chief
+  stackName: fire-chief
+  endpointType: regional
+  logRetentionInDays: 7
+  stackTags:
+    Application: fire-chief
+    Creator: serverless
+  tags:
+    Application: fire-chief
+    Creator: serverless
+  versionFunctions: false
+  deploymentBucket:
+    name: acorns-serverless-deploys-${opt:stage}
+    serverSideEncryption: AES256
+  environment:
+    NODE_ENV: production
+    STAGE: ${opt:stage}
+    JIRA_USER: incident-manager@acorns.com
+    JIRA_API_TOKEN: ${ssm:/platform/fire-chief/jira-api-token~true}
+    OPSGENIE_TOKEN: ${ssm:/platform/fire-chief/opsgenie-token~true}
+    SLACK_OAUTH_TOKEN: ${ssm:/platform/fire-chief/slack-oauth-token~true}
+    SLACK_BOT_TOKEN: ${ssm:/platform/fire-chief/slack-bot-token~true}
+  
+  iamRoleStatements:
+    - Effect: Allow
+      Action: 
+        - "xray:PutTraceSegments"
+        - "xray:PutTelemetryRecords"
+      Resource:
+        - "*"
+
+functions:
+  apiHandler:
+    handler: handler.apiHandler
+    description: "API Call handler"
+    timeout: 30
+    events: ${file(./config/apiEvents.yml)}
+# Because pinging incidents at 8 AM did not fly
+#   MorningReport:
+#     handler: src/tasks/onCall.whoIsOnCall
+#     events:
+#       - schedule: cron(0 16 * * ? *)
